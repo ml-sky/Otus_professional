@@ -7,6 +7,7 @@ vagrant box add --name 'centos/7'
 #Проверяем что образ доступен 
 vagrant box list | grep centos
 
+#Скрипт kernel-update.sh должен находится там же где и vagrantfile
 #Если используем полноценный VPN то сразу запускаем следующую команду
 vagrant up
 
