@@ -1,0 +1,20 @@
+# -*- mode: ruby -*- 
+# vi: set ft=ruby : vsa
+Vagrant.configure(2) do |config| 
+    config.vm.box = "centos/7" 
+    config.vm.provider "virtualbox" do |v|
+    config.vm.synced_folder ".", "/vagrant", disabled: true 
+      v.memory = 256 
+      v.cpus = 1 
+ end 
+    config.vm.define "nfsserver" do |nfsserver| 
+      nfsserver.vm.network "private_network", ip: "192.168.50.10",  virtualbox__intnet: "net1" 
+      nfsserver.vm.hostname = "nfsserver"
+      nfsserver.vm.provision "shell", path: "nfsserver.sh"
+ end 
+    config.vm.define "nfsclient" do |nfsclient| 
+      nfsclient.vm.network "private_network", ip: "192.168.50.11",  virtualbox__intnet: "net1" 
+      nfsclient.vm.hostname = "nfsclient"
+      nfsclient.vm.provision "shell", path: "nfsclient.sh"
+ end 
+end
