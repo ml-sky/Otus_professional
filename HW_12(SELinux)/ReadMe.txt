@@ -4,7 +4,7 @@ yum install policycoreutils-python policycoreutils-newrole -y
 yum install setools-console -y
 yum install selinux-policy-mls -y
 yum install setroubleshoot-server -y
-1. Запустить nginx на нестандартном порту 3-мя разными способами (в Vagrantfile nginx имеет нестандартный порт 4881):
+**1. Запустить nginx на нестандартном порту 3-мя разными способами (в Vagrantfile nginx имеет нестандартный порт 4881):**
 	1.1 Переключатели setsebool
 	
 		Анализируем лог /var/log/audit/audit.log и находим время блокировки nginx
