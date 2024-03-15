@@ -5,10 +5,8 @@ sudo -i
 
 #Создаем файл конфигурации
 cat >> /etc/sysconfig/watchlog << EOF
-# Configuration file for my watchlog service
-# Place it to /etc/sysconfig
 
-# File and word in that file that we will be monit
+# Файл и слово которое мы будем мониторить
 WORD="ALERT"
 LOG=/var/log/watchlog.log
 EOF
