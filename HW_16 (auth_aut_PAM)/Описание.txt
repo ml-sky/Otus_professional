@@ -1,0 +1,119 @@
+Настройка запрета для всех пользователей (кроме группы Admin) логина в выходные дни (Праздники не учитываются)
+
+1)Приложен скрипт и vagrant файл. В скрипте реализация этой задачи с помощью компонента pam_script
+
+2) Подробное описание по шагам (по способу указанному в методичке)
+
+1. Подключаемся к нашей созданной ВМ: vagrant ssh
+2. Переходим в root-пользователя: sudo -i
+3. Создаём пользователя otusadm и otus: sudo useradd otusadm && sudo useradd otus
+
+[root@otuslinux ~]# sudo useradd otusadm && sudo useradd otus
+[root@otuslinux ~]# cat /etc/passwd
+otusadm:x:1001:1001::/home/otusadm:/bin/bash
+otus:x:1002:1002::/home/otus:/bin/bash
+
+4. Создаём пользователям пароли: echo "Otus2024!" | sudo passwd --stdin otusadm && echo "Otus2024!" | sudo passwd --stdin otus
+[root@otuslinux ~]# echo "Otus2024" | sudo passwd --stdin otusadm
+Changing password for user otusadm.
+passwd: all authentication tokens updated successfully.
+[root@otuslinux ~]# echo "Otus2024" | sudo passwd --stdin otus
+Changing password for user otus.
+passwd: all authentication tokens updated successfully.
+
+5. Создаём группу admin: sudo groupadd -f admin
+[root@otuslinux ~]# cat /etc/group | grep "^admin"
+admin:x:1003:
+
+6. Добавляем пользователей vagrant,root и otusadm в группу admin:
+usermod otusadm -a -G admin && usermod root -a -G admin && usermod vagrant -a -G admin
+
+[root@otuslinux ~]# usermod otusadm -a -G admin && usermod root -a -G admin && usermod vagrant -a -G admin
+[root@otuslinux ~]# cat /etc/group | grep "^admin"
+admin:x:1003:otusadm,root,vagrant
+
+
+Проверяем пользователей что все коннектится
+
+Using username "otus".
+otus@192.168.11.101's password:
+Last login: Sat Apr 20 06:22:01 2024 from 192.168.11.1
+[otus@otuslinux ~]$ whoami
+otus
+
+login as: otusadm
+otusadm@192.168.11.101's password:
+[otusadm@otuslinux ~]$ whoami
+otusadm
+
+7. Создадим файл-скрипт /usr/local/bin/login.sh
+
+vim /usr/local/bin/login.sh
+
+#!/bin/bash
+#Первое условие: если день недели суббота или воскресенье
+if [ $(date +%a) = "Sat" ] || [ $(date +%a) = "Sun" ]; then
+ #Второе условие: входит ли пользователь в группу admin
+ if getent group admin | grep -qw "$PAM_USER"; then
+        #Если пользователь входит в группу admin, то он может подключиться
+        exit 0
+      else
+        #Иначе ошибка (не сможет подключиться)
+        exit 1
+    fi
+  #Если день не выходной, то подключиться может любой пользователь
+  else
+    exit 0
+fi
+
+8.Добавим права на исполнение файла: chmod +x /usr/local/bin/login.sh
+
+9.Укажем в файле /etc/pam.d/sshd модуль pam_exec и наш скрипт:
+
+#%PAM-1.0
+auth       required     pam_sepermit.so
+auth       substack     password-auth
+auth       include      postlogin
+auth required pam_exec.so debug /usr/local/bin/login.sh
+# Used with polkit to reauthorize users in remote sessions
+-auth      optional     pam_reauthorize.so prepare
+account    required     pam_nologin.so
+account    include      password-auth
+password   include      password-auth
+# pam_selinux.so close should be the first session rule
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+# pam_selinux.so open should only be followed by sessions to be executed in the user context
+session    required     pam_selinux.so open env_params
+session    required     pam_namespace.so
+session    optional     pam_keyinit.so force revoke
+session    include      password-auth
+session    include      postlogin
+# Used with polkit to reauthorize users in remote sessions
+-session   optional     pam_reauthorize.so prepare
+
+10.Проверяем
+[root@otuslinux ~]# date
+Sat Apr 20 06:34:26 UTC 2024
+
+Под пользователем otus ошибка
+login as: otus
+otus@192.168.11.101's password:
+Access denied
+
+Под пользователем otusadm все заходит
+login as: otusadm
+otusadm@192.168.11.101's password:
+Last login: Sat Apr 20 06:23:53 2024 from 192.168.11.1
+[otusadm@otuslinux ~]$
+
+Меняем дату и под пользователем otus все прекрасно заходит
+login as: otus
+otus@192.168.11.101's password:
+Last failed login: Sat Apr 20 06:35:24 UTC 2024 from 192.168.11.1 on ssh:notty
+There were 2 failed login attempts since the last successful login.
+Last login: Sat Apr 20 06:22:56 2024 from 192.168.11.1
+[otus@otuslinux ~]$ date
+Fri Apr 19 00:00:25 UTC 2024
+[otus@otuslinux ~]$
+
