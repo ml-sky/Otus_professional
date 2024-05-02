@@ -1,0 +1,19 @@
+Домашнее задание
+
+1.Реализовать knocking port
+  centralRouter может попасть на ssh inetrRouter через knock скрипт
+
+Скрипт и правила iptables взял из материалов к уроку( https://wiki.archlinux.org/title/Port_knocking ).
+Вагрант кладет iptables_inetrouter.rules на inetRouter и делает iptables-restore (восстанавливает правила) 
+Чтобы попасть с помощью knocking port на inetrouter,необходимо зайти на centralRouter и выполнить скрипт /vagrant/knock.sh 192.168.255.1 8881 7777 9991. 
+Затем, в течение 30 секунд можно будет покдлючиться по ssh с centralRouter на inetRouter ssh vagrant@192.168.255.1 пароль по умолчанию vagrant
+
+
+2. Добавить inetRouter2, который виден(маршрутизируется) с хоста или форвардится порт через локалхост.
+   Запустить nginx на centralServer.
+   Пробросить 80й порт на inetRouter2 8080.
+   Дефолт в инет оставить через inetRouter.
+   
+Вагрантом выполняется установка nginx на centralServer, далее с помощью правил, указанных в файле iptables_inetrouter2.rules,
+iptables-restore < /vagrant/iptables_inetrouter2.rules
+на inetRouter2 добавляются правила, пробрасывающие порт 80 на inetRouter2 8080
