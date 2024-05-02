@@ -185,6 +185,7 @@ office2Server
 Сервер office2
 #ip на интерфейс сервера
 ip: '192.168.1.2', netmask: "255.255.255.192"
+
 trace до ya.ru
 [root@office2Server ~]# traceroute ya.ru
 traceroute to ya.ru (77.88.55.242), 30 hops max, 60 byte packets
